@@ -1,25 +1,15 @@
 package database
 
 import (
-	"github.com/diiineeei/IntegracaoJson/models"
-	"gorm.io/driver/mysql"
+	"github.com/diiineeei/ApiLojinha/models"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"log"
 )
 
-var InstanceMySQL *gorm.DB
 var InstancePostgres *gorm.DB
 var dbError error
 
-func ConnectMySQL(connectionString string) {
-	InstanceMySQL, dbError = gorm.Open(mysql.Open(connectionString), &gorm.Config{})
-	if dbError != nil {
-		log.Fatal(dbError)
-		panic("Cannot connect to DB")
-	}
-	log.Println("Connected to Database MySQL!")
-}
 func ConnectPostgres(connectionString string) {
 	InstancePostgres, dbError = gorm.Open(postgres.Open(connectionString), &gorm.Config{})
 	if dbError != nil {
@@ -30,7 +20,9 @@ func ConnectPostgres(connectionString string) {
 }
 
 func Migrate() {
-	InstanceMySQL.AutoMigrate(&models.Contact{}, &models.User{})
-	InstancePostgres.AutoMigrate(&models.Contact{})
+	err := InstancePostgres.AutoMigrate(&models.Produto{})
+	if err != nil {
+		log.Fatal(err)
+	}
 	log.Println("Database Migration Completed!")
 }

@@ -1,8 +1,7 @@
 package controllers
 
 import (
-	"github.com/diiineeei/IntegracaoJson/database"
-	"github.com/diiineeei/IntegracaoJson/models"
+	"github.com/diiineeei/ApiLojinha/models"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -22,12 +21,12 @@ func RegisterUser(context *gin.Context) {
 		return
 	}
 
-	record := database.InstanceMySQL.Create(&user)
-	if record.Error != nil {
-		context.JSON(http.StatusInternalServerError, gin.H{"error": record.Error.Error()})
-		context.Abort()
-		return
-	}
+	//record := database.InstanceMySQL.Create(&user)
+	//if record.Error != nil {
+	//	context.JSON(http.StatusInternalServerError, gin.H{"error": record.Error.Error()})
+	//	context.Abort()
+	//	return
+	//}
 
 	context.JSON(http.StatusCreated, gin.H{"userId": user.ID, "email": user.Email, "name": user.Name, "company": user.Company})
 }

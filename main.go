@@ -1,31 +1,36 @@
 package main
 
 import (
-	"github.com/diiineeei/IntegracaoJson/controllers"
-	"github.com/diiineeei/IntegracaoJson/database"
-	"github.com/diiineeei/IntegracaoJson/middlewares"
-
+	"github.com/diiineeei/ApiLojinha/controllers"
+	"github.com/diiineeei/ApiLojinha/database"
 	"github.com/gin-gonic/gin"
+	"log"
 )
 
 func init() {
 	// Initialize Database
-	database.ConnectMySQL("admin:admin@tcp(localhost:3306)/admin?parseTime=true")
 	database.ConnectPostgres("postgres://admin:admin@localhost:5432/admin")
 	database.Migrate()
 }
 func main() {
 	// Initialize Router
 	router := gin.Default()
-	api := router.Group("/api")
-	{
-		api.POST("/token", controllers.GenerateToken)
-		api.POST("/user/register", controllers.RegisterUser)
-		secured := api.Group("/secured").Use(middlewares.Auth())
-		{
-			secured.POST("/contact/register", controllers.RegisterContacts)
-			secured.POST("/contact/register/list", controllers.RegisterContactsList)
-		}
+	router.POST("/api/cadastrar/produto", controllers.RegisterContacts)
+
+	//api := router.Group("/api")
+
+	//{
+	//	//api.POST("/token", controllers.GenerateToken)
+	//	api.POST("/user/register", controllers.RegisterUser)
+	//	secured := api.Group("/secured").Use(middlewares.Auth())
+	//	{
+	//		secured.POST("/contact/register", controllers.RegisterContacts)
+	//		secured.POST("/contact/register/list", controllers.RegisterContactsList)
+	//	}
+	//}
+	err := router.Run(":8080")
+	if err != nil {
+		log.Fatal(err)
+		return
 	}
-	router.Run(":8080")
 }

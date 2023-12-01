@@ -1,7 +1,7 @@
 package middlewares
 
 import (
-	"github.com/diiineeei/IntegracaoJson/authjwt"
+	"github.com/diiineeei/ApiLojinha/authjwt"
 	"github.com/gin-gonic/gin"
 )
 
