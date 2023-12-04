@@ -28,12 +28,13 @@ func CadastraProduto(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusCreated,
 		gin.H{
-			"ID":        produto.ID,
-			"Nome":      produto.Nome,
-			"Descricao": produto.Descricao,
-			"Valor":     produto.Valor,
-			"EmEstoque": produto.EmEstoque,
-			"ImagemURL": produto.ImagemURL,
+			"ID":             produto.ID,
+			"Nome":           produto.Nome,
+			"Descricao":      produto.Descricao,
+			"Valor":          produto.Valor,
+			"EmEstoque":      produto.EmEstoque,
+			"ImagemURL":      produto.ImagemURL,
+			"CodigoDeBarras": produto.CodigoDeBarras,
 		},
 	)
 }

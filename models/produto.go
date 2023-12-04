@@ -11,5 +11,5 @@ type Produto struct {
 	Valor          float64 `json:"valor"`
 	EmEstoque      bool    `json:"emEstoque"`
 	ImagemURL      string  `json:"imagemURL"`
-	CodigoDeBarras string  `json:"CodigoDeBarras"`
+	CodigoDeBarras string  `json:"codigoDeBarras"`
 }
