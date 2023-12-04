@@ -16,6 +16,7 @@ func main() {
 	// Initialize Router
 	router := gin.Default()
 	router.POST("/api/cadastrar/produto", controllers.CadastraProduto)
+	router.POST("/api/lista/produtos", controllers.ListaProdutos)
 
 	//api := router.Group("/api")
 

@@ -6,9 +6,10 @@ import (
 
 type Produto struct {
 	gorm.Model
-	Nome      string  `json:"nome"`
-	Descricao string  `json:"descricao"`
-	Valor     float64 `json:"valor"`
-	EmEstoque bool    `json:"emEstoque"`
-	ImagemURL string  `json:"imagemURL"`
+	Nome           string  `json:"nome"`
+	Descricao      string  `json:"descricao"`
+	Valor          float64 `json:"valor"`
+	EmEstoque      bool    `json:"emEstoque"`
+	ImagemURL      string  `json:"imagemURL"`
+	CodigoDeBarras string  `json:"CodigoDeBarras"`
 }
