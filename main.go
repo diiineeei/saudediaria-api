@@ -15,7 +15,7 @@ func init() {
 func main() {
 	// Initialize Router
 	router := gin.Default()
-	router.POST("/api/cadastrar/produto", controllers.RegisterContacts)
+	router.POST("/api/cadastrar/produto", controllers.CadastraProduto)
 
 	//api := router.Group("/api")
 
@@ -24,7 +24,7 @@ func main() {
 	//	api.POST("/user/register", controllers.RegisterUser)
 	//	secured := api.Group("/secured").Use(middlewares.Auth())
 	//	{
-	//		secured.POST("/contact/register", controllers.RegisterContacts)
+	//		secured.POST("/contact/register", controllers.CadastraProduto)
 	//		secured.POST("/contact/register/list", controllers.RegisterContactsList)
 	//	}
 	//}

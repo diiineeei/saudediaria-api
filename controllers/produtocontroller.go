@@ -8,7 +8,7 @@ import (
 	"net/http"
 )
 
-func RegisterContacts(context *gin.Context) {
+func CadastraProduto(context *gin.Context) {
 	var produto models.Produto
 	if err := context.ShouldBindJSON(&produto); err != nil {
 		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
