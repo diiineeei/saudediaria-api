@@ -4,7 +4,6 @@ import (
 	"github.com/diiineeei/ApiLojinha/controllers"
 	"github.com/diiineeei/ApiLojinha/database"
 	"github.com/gin-gonic/gin"
-	"log"
 )
 
 func init() {
@@ -19,9 +18,9 @@ func main() {
 	router.GET("/api/ping", func(c *gin.Context) {
 		c.String(200, "test")
 	})
-	err := router.Run(":8080")
+	err := router.Run(":80")
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 		return
 	}
 }

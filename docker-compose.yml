@@ -8,3 +8,11 @@ services:
     environment:
       POSTGRES_PASSWORD: "admin"
       POSTGRES_USER: "admin"
+
+  golang:
+    build: .
+    container_name: golang
+    ports:
+      - "80:80"
+    depends_on:
+      - "postgresql"

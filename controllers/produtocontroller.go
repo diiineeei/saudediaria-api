@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"github.com/diiineeei/ApiLojinha/database"
+	"github.com/diiineeei/ApiLojinha/log"
 	"github.com/diiineeei/ApiLojinha/models"
 	"github.com/gin-gonic/gin"
 	"strconv"
@@ -46,7 +47,7 @@ func ListaProdutos(ctx *gin.Context) {
 		emEstoque            bool
 		err                  error
 	)
-
+	log.Infof(ctx.Request, "Teste")
 	paramID := ctx.Query("id")
 	if paramID != "" {
 		id, err = strconv.ParseInt(paramID, 10, 64)
