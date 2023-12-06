@@ -34,6 +34,7 @@ func ConnectPostgres(connectionString string) {
 	//	log.Fatal(dbError)
 	//	panic("Cannot connect to DB")
 	//}
+
 	log.Println("Connected to Database Postgres!")
 }
 
