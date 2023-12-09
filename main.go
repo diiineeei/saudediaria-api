@@ -2,14 +2,13 @@ package main
 
 import (
 	"github.com/diiineeei/ApiLojinha/controllers"
-	"github.com/diiineeei/ApiLojinha/database"
 	"github.com/gin-gonic/gin"
 )
 
-func init() {
-	database.ConnectPostgres("postgres://admin:admin@localhost:5432/admin")
-	database.Migrate()
-}
+//	func init() {
+//		database.Database("postgres://admin:admin@localhost:5432/admin")
+//		//database.Migrate()
+//	}
 func main() {
 	router := gin.Default()
 	//router.Use(static.Serve("/", static.LocalFile("static_production", false)))

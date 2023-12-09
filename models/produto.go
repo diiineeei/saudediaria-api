@@ -1,15 +1,11 @@
 package models
 
-import (
-	"gorm.io/gorm"
-)
-
 type Produto struct {
-	gorm.Model
-	Nome           string  `json:"nome"`
-	Descricao      string  `json:"descricao"`
-	Valor          float64 `json:"valor"`
-	EmEstoque      bool    `json:"emEstoque"`
-	ImagemURL      string  `json:"imagemURL"`
-	CodigoDeBarras string  `json:"codigoDeBarras"`
+	ID             int64   `json:"ID" datastore:"-"`
+	Nome           string  `json:"nome" datastore:"nome"`
+	Descricao      string  `json:"descricao" datastore:"descricao"`
+	Valor          float64 `json:"valor" datastore:"valor"`
+	EmEstoque      bool    `json:"emEstoque" datastore:"emEstoque"`
+	ImagemURL      string  `json:"imagemURL" datastore:"imagemURL"`
+	CodigoDeBarras string  `json:"codigoDeBarras" datastore:"codigoDeBarras"`
 }
