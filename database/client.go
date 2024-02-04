@@ -20,11 +20,19 @@ func PutProdutos(produto models.Produto) error {
 	defer dsClient.Close()
 
 	e := new(models.Produto)
-	key := datastore.IDKey(KindProdutos, produto.ID, nil)
+	var key *datastore.Key
 
-	err = dsClient.Get(ctx, key, e)
-	if err != nil && err.Error() != ErrnoSuchEntity {
-		return err
+	key = datastore.IDKey(KindProdutos, produto.ID, nil)
+
+	if produto.ID == 0 {
+		key = datastore.IncompleteKey(KindProdutos, nil)
+	}
+
+	if produto.ID != 0 {
+		err = dsClient.Get(ctx, key, e)
+		if err != nil && err.Error() != ErrnoSuchEntity {
+			return err
+		}
 	}
 
 	e.Nome = produto.Nome
