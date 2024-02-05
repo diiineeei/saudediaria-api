@@ -15,6 +15,7 @@ func main() {
 	router.Use(cors.Default())
 	//router.Use(static.Serve("/", static.LocalFile("static_production", false)))
 	router.POST("/api/cadastrar/produto", controllers.CadastraProduto)
+	router.POST("/api/upload", controllers.UploadProduto)
 	router.GET("/api/lista/produtos", controllers.ListaProdutos)
 	router.GET("/api/ping", func(c *gin.Context) {
 		c.String(200, "test")
