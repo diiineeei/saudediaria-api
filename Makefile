@@ -1,5 +1,5 @@
 # Variaveis para especificar propriedades do sistema
-PROJECT=testes-rodinei
+PROJECT=adega-do-vilao
 SERVICE=app-lojinha
 VERSION=latest
 

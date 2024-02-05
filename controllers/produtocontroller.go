@@ -49,19 +49,11 @@ type ClientUploader struct {
 	uploadPath string
 }
 
-var uploader *ClientUploader
-
 func UploadProduto(ctx *gin.Context) {
 	var produto models.Produto
-	err := ctx.ShouldBind(&produto)
+	err := ctx.Bind(&produto)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		ctx.Abort()
-		return
-	}
-	err = database.PutProdutos(produto)
-	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		ctx.Abort()
 		return
 	}
@@ -72,15 +64,14 @@ func UploadProduto(ctx *gin.Context) {
 		return
 	}
 
-	blobFile, err := file.Open()
+	fileReader, err := file.Open()
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+	defer fileReader.Close()
 
-	filename := fmt.Sprintf("%s.png", time.Now().Format("20060102040405"))
+	fileBin, err := io.ReadAll(fileReader)
 
 	c := context.Background()
 	client, err := storage.NewClient(c)
@@ -90,24 +81,43 @@ func UploadProduto(ctx *gin.Context) {
 	}
 	defer client.Close()
 
-	uploader := &ClientUploader{
-		cl:         client,
-		bucketName: "adega-produtos",
-		projectID:  "adega-do-vilao",
-		uploadPath: "adega-do-vilao/",
-	}
+	// Nome do bucket e caminho onde o arquivo será salvo
+	bucketName := "adega-produtos"
+	uploadPath := fmt.Sprintf("%s.png", time.Now().Format("20060102040405"))
+	//uploadPath := "adega-do-vilao/" + filename
 
-	wc := uploader.cl.Bucket(uploader.bucketName).Object(uploader.uploadPath + filename).NewWriter(ctx)
-	if _, err := io.Copy(wc, blobFile); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"io.Copy": err.Error()})
+	// Iniciando o upload
+	wc := client.Bucket(bucketName).Object(uploadPath).NewWriter(c)
+
+	wc.ContentType = "image/png"
+	_, err = wc.Write(fileBin)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "wc.Write failed: " + err.Error()})
 		return
 	}
+
 	if err := wc.Close(); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"Writer.Close": err.Error()})
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "GCS Writer.Close failed: " + err.Error()})
 		return
 	}
 
-	produto.ImagemURL = filename
+	//downloadURL, err := client.Bucket(bucketName).SignedURL(uploadPath, &storage.SignedURLOptions{
+	//	Expires: time.Now().AddDate(0, 0, 7),
+	//	Scheme:  storage.SigningSchemeV4,
+	//	Method:  "GET",
+	//})
+	//if err != nil {
+	//	ctx.JSON(http.StatusInternalServerError, gin.H{"error": "error getting download URL: " + err.Error()})
+	//	return
+	//}
+
+	produto.ImagemURL = fmt.Sprintf("https://storage.cloud.google.com/adega-produtos/%s", uploadPath)
+	err = database.PutProdutos(produto)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		ctx.Abort()
+		return
+	}
 
 	ctx.JSON(http.StatusCreated,
 		gin.H{
