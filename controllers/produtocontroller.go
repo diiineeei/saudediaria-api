@@ -22,7 +22,7 @@ func CadastraProduto(ctx *gin.Context) {
 		ctx.Abort()
 		return
 	}
-	err = database.PutProdutos(produto)
+	err = database.PutProdutos(&produto)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		ctx.Abort()
@@ -112,7 +112,7 @@ func UploadProduto(ctx *gin.Context) {
 	//}
 
 	produto.ImagemURL = fmt.Sprintf("https://storage.cloud.google.com/adega-produtos/%s", uploadPath)
-	err = database.PutProdutos(produto)
+	err = database.PutProdutos(&produto)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		ctx.Abort()
@@ -135,15 +135,7 @@ func ListaProdutos(ctx *gin.Context) {
 	var filterProduto models.Produto
 	var err error
 	log.Infof(ctx.Request, "Teste")
-	paramID := ctx.Query("id")
-	if paramID != "" {
-		filterProduto.ID, err = strconv.ParseInt(paramID, 10, 64)
-		if err != nil {
-			ctx.JSON(http.StatusInternalServerError, gin.H{"erro ao decodificar parametro ID": err})
-			ctx.Abort()
-			return
-		}
-	}
+	filterProduto.ID = ctx.Query("id")
 	paramEmEstoque := ctx.Query("emEstoque")
 	if paramEmEstoque != "" {
 		filterProduto.EmEstoque, err = strconv.ParseBool(paramEmEstoque)

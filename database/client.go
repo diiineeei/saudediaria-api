@@ -1,100 +1,101 @@
 package database
 
 import (
-	"cloud.google.com/go/datastore"
+	"cloud.google.com/go/firestore"
 	"context"
 	"github.com/diiineeei/ApiLojinha/models"
+	"github.com/diiineeei/ApiLojinha/utils"
 )
 
-const ProjectID = "adega-do-vilao"
-const KindProdutos = "produtos"
-const ErrnoSuchEntity = "datastore: no such entity"
+const CollectionProdutos = "produtos"
+const DatabaseProdutos = "produtos"
 
-func PutProdutos(produto models.Produto) error {
+func PutProdutos(produto *models.Produto) error {
 	ctx := context.Background()
 
-	dsClient, err := datastore.NewClient(ctx, ProjectID)
+	//opt := option.WithCredentialsFile("rodinei-9f69e511f308.json")
+	//fsClient, err := firestore.NewClientWithDatabase(ctx, utils.AppEngineGetProjectID(), DatabaseProdutos, opt)
+	//if err != nil {
+	//	return err
+	//}
+
+	fsClient, err := firestore.NewClientWithDatabase(ctx, utils.AppEngineGetProjectID(), DatabaseProdutos)
 	if err != nil {
 		return err
 	}
-	defer dsClient.Close()
+	defer fsClient.Close()
 
-	e := new(models.Produto)
-	var key *datastore.Key
+	collection := fsClient.Collection(CollectionProdutos)
 
-	key = datastore.IDKey(KindProdutos, produto.ID, nil)
+	var docRef *firestore.DocumentRef
 
-	if produto.ID == 0 {
-		key = datastore.IncompleteKey(KindProdutos, nil)
+	if produto.ID != "" {
+		docRef = collection.NewDoc() // Gera um ID automático
+		produto.ID = docRef.ID       // Converte ID gerado para int, se necessário
+	} else {
+		docRef = collection.Doc(produto.ID) // Usa o ID fornecido
 	}
 
-	if produto.ID != 0 {
-		err = dsClient.Get(ctx, key, e)
-		if err != nil && err.Error() != ErrnoSuchEntity {
-			return err
-		}
-	}
-
-	e.Nome = produto.Nome
-	e.Descricao = produto.Descricao
-	e.Valor = produto.Valor
-	e.EmEstoque = produto.EmEstoque
-	e.ImagemURL = produto.ImagemURL
-	e.CodigoDeBarras = produto.CodigoDeBarras
-
-	if _, err := dsClient.Put(ctx, key, e); err != nil {
+	_, err = docRef.Set(ctx, produto)
+	if err != nil {
 		return err
 	}
 
 	return nil
 }
 
+// GetProdutos Buscar produtos com filtro
 func GetProdutos(produtoFilter models.Produto) ([]models.Produto, error) {
-	var produtos []models.Produto
 	ctx := context.Background()
-
-	dsClient, err := datastore.NewClient(ctx, ProjectID)
+	fsClient, err := firestore.NewClientWithDatabase(ctx, utils.AppEngineGetProjectID(), DatabaseProdutos)
 	if err != nil {
 		return nil, err
 	}
-	defer dsClient.Close()
+	defer fsClient.Close()
 
-	key := datastore.IDKey(KindProdutos, produtoFilter.ID, nil)
+	collection := fsClient.Collection(CollectionProdutos)
+	var produtos []models.Produto
 
-	if produtoFilter.ID != 0 {
-		e := new(models.Produto)
-		err = dsClient.Get(ctx, key, e)
-		if err != nil && err.Error() != ErrnoSuchEntity {
+	if produtoFilter.ID != "" {
+		docRef := collection.Doc(produtoFilter.ID)
+		docSnap, err := docRef.Get(ctx)
+		if err != nil {
 			return nil, err
 		}
-		if e != nil {
-			e.ID = key.ID
-			produtos = append(produtos, *e)
+		var produto models.Produto
+		err = docSnap.DataTo(&produto)
+		if err != nil {
+			return nil, err
 		}
+		produto.ID = produtoFilter.ID
+		return []models.Produto{produto}, nil
 	}
 
-	q := datastore.NewQuery(KindProdutos)
+	query := collection.Query
+
 	if produtoFilter.EmEstoque {
-		q.FilterField("EmEstoque", "=", produtoFilter.EmEstoque)
+		query = query.Where("EmEstoque", "==", produtoFilter.EmEstoque)
 	}
 	if produtoFilter.CodigoDeBarras != "" {
-		q.FilterField("CodigoDeBarras", "=", produtoFilter.CodigoDeBarras)
+		query = query.Where("CodigoDeBarras", "==", produtoFilter.CodigoDeBarras)
 	}
 	if produtoFilter.Nome != "" {
-		q.FilterField("Nome", "=", produtoFilter.Nome)
+		query = query.Where("Nome", "==", produtoFilter.Nome)
 	}
 
-	keys, err := dsClient.GetAll(ctx, q, &produtos)
+	docs, err := query.Documents(ctx).GetAll()
 	if err != nil {
 		return nil, err
 	}
 
-	for i := range produtos {
-		produtos[i].ID = keys[i].ID
-	}
-
-	if err != nil && err.Error() != ErrnoSuchEntity {
-		return nil, err
+	for _, doc := range docs {
+		var produto models.Produto
+		err := doc.DataTo(&produto)
+		if err != nil {
+			return nil, err
+		}
+		produto.ID = doc.Ref.ID
+		produtos = append(produtos, produto)
 	}
 
 	return produtos, nil

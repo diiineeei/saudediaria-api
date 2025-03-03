@@ -1,11 +1,11 @@
 package models
 
 type Produto struct {
-	ID             int64   `form:"ID" json:"ID" datastore:"-"`
-	Nome           string  `form:"nome" json:"nome" datastore:"Nome"`
-	Descricao      string  `form:"descricao" json:"descricao" datastore:"Descricao"`
-	Valor          float64 `form:"valor" json:"valor" datastore:"Valor"`
-	EmEstoque      bool    `form:"emEstoque" json:"emEstoque" datastore:"EmEstoque"`
-	ImagemURL      string  `form:"imagemURL" json:"imagemURL" datastore:"ImagemURL"`
-	CodigoDeBarras string  `form:"codigoDeBarras" json:"codigoDeBarras" datastore:"CodigoDeBarras"`
+	ID             string  `json:"id,omitempty"` // Firestore armazena IDs como string, lidamos com isso na conversão
+	Nome           string  `json:"nome"`
+	Descricao      string  `json:"descricao"`
+	Valor          float64 `json:"valor"`
+	EmEstoque      bool    `json:"emEstoque"`
+	ImagemURL      string  `json:"imagemURL"`
+	CodigoDeBarras string  `json:"codigoDeBarras"`
 }
