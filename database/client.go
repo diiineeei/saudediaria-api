@@ -1,102 +1,97 @@
 package database
 
 import (
-	"cloud.google.com/go/firestore"
 	"context"
 	"github.com/diiineeei/ApiLojinha/models"
-	"github.com/diiineeei/ApiLojinha/utils"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
+	"log"
+	"sync"
+	"time"
 )
 
-const CollectionProdutos = "produtos"
-const DatabaseProdutos = "produtos"
+const (
+	CollectionRegistros = "registros"
+	DatabaseName        = "saude"
+)
 
-func PutProdutos(produto *models.Produto) error {
-	ctx := context.Background()
+var (
+	client     *mongo.Client
+	collection *mongo.Collection
+	once       sync.Once
+)
 
-	//opt := option.WithCredentialsFile("rodinei-9f69e511f308.json")
-	//fsClient, err := firestore.NewClientWithDatabase(ctx, utils.AppEngineGetProjectID(), DatabaseProdutos, opt)
-	//if err != nil {
-	//	return err
-	//}
+func ConnectMongo(uri string) {
+	once.Do(func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
 
-	fsClient, err := firestore.NewClientWithDatabase(ctx, utils.AppEngineGetProjectID(), DatabaseProdutos)
-	if err != nil {
-		return err
-	}
-	defer fsClient.Close()
+		clientOptions := options.Client().ApplyURI(uri)
 
-	collection := fsClient.Collection(CollectionProdutos)
+		var err error
+		client, err = mongo.Connect(ctx, clientOptions)
+		if err != nil {
+			log.Fatalf("Erro ao conectar MongoDB: %v", err)
+		}
 
-	var docRef *firestore.DocumentRef
+		err = client.Ping(ctx, nil)
+		if err != nil {
+			log.Fatalf("Erro no ping do MongoDB: %v", err)
+		}
 
-	if produto.ID != "" {
-		docRef = collection.NewDoc() // Gera um ID automático
-		produto.ID = docRef.ID       // Converte ID gerado para int, se necessário
-	} else {
-		docRef = collection.Doc(produto.ID) // Usa o ID fornecido
-	}
-
-	_, err = docRef.Set(ctx, produto)
-	if err != nil {
-		return err
-	}
-
-	return nil
+		collection = client.Database(DatabaseName).Collection(CollectionRegistros)
+	})
 }
 
-// GetProdutos Buscar produtos com filtro
-func GetProdutos(produtoFilter models.Produto) ([]models.Produto, error) {
-	ctx := context.Background()
-	fsClient, err := firestore.NewClientWithDatabase(ctx, utils.AppEngineGetProjectID(), DatabaseProdutos)
+// PutRegistro insere um registro de saúde diária
+func PutRegistro(registro models.Registro) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	_, err := collection.InsertOne(ctx, registro)
+	return err
+}
+
+// GetRegistros busca registros conforme filtro (exemplo básico por data)
+func GetRegistros(filtro models.Registro) ([]models.Registro, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	filter := bson.M{}
+
+	// Filtra por data se fornecida
+	if filtro.Date != "" {
+		filter["date"] = filtro.Date
+	}
+
+	// Se quiser pode filtrar por horário também, glicemia etc, ex:
+	if filtro.Time != "" {
+		filter["time"] = filtro.Time
+	}
+
+	findOptions := options.Find()
+	findOptions.SetLimit(10)
+	findOptions.SetSort(bson.D{{Key: "date", Value: -1}}) // ordena por data decrescente
+
+	cursor, err := collection.Find(ctx, filter, findOptions)
 	if err != nil {
 		return nil, err
 	}
-	defer fsClient.Close()
+	defer cursor.Close(ctx)
 
-	collection := fsClient.Collection(CollectionProdutos)
-	var produtos []models.Produto
-
-	if produtoFilter.ID != "" {
-		docRef := collection.Doc(produtoFilter.ID)
-		docSnap, err := docRef.Get(ctx)
-		if err != nil {
+	var resultados []models.Registro
+	for cursor.Next(ctx) {
+		var registro models.Registro
+		if err := cursor.Decode(&registro); err != nil {
 			return nil, err
 		}
-		var produto models.Produto
-		err = docSnap.DataTo(&produto)
-		if err != nil {
-			return nil, err
-		}
-		produto.ID = produtoFilter.ID
-		return []models.Produto{produto}, nil
+		resultados = append(resultados, registro)
 	}
 
-	query := collection.Query
-
-	if produtoFilter.EmEstoque {
-		query = query.Where("EmEstoque", "==", produtoFilter.EmEstoque)
-	}
-	if produtoFilter.CodigoDeBarras != "" {
-		query = query.Where("CodigoDeBarras", "==", produtoFilter.CodigoDeBarras)
-	}
-	if produtoFilter.Nome != "" {
-		query = query.Where("Nome", "==", produtoFilter.Nome)
-	}
-
-	docs, err := query.Documents(ctx).GetAll()
-	if err != nil {
+	if err := cursor.Err(); err != nil {
 		return nil, err
 	}
 
-	for _, doc := range docs {
-		var produto models.Produto
-		err := doc.DataTo(&produto)
-		if err != nil {
-			return nil, err
-		}
-		produto.ID = doc.Ref.ID
-		produtos = append(produtos, produto)
-	}
-
-	return produtos, nil
+	return resultados, nil
 }

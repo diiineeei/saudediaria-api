@@ -1,7 +1,7 @@
 # Variaveis para especificar propriedades do sistema
-PROJECT=adega-do-vilao
-SERVICE=app-lojinha
-VERSION=latest
+PROJECT=rodinei
+SERVICE=app
+VERSION=saudediaria-api
 
 auth:
 	gcloud auth configure-docker -q

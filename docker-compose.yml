@@ -1,18 +1,8 @@
 version: '3'
 
 services:
-  postgresql:
-    image: postgres
-    ports:
-      - "5432:5432"
-    environment:
-      POSTGRES_PASSWORD: "admin"
-      POSTGRES_USER: "admin"
-
   golang:
     build: .
     container_name: golang
     ports:
       - "80:80"
-    depends_on:
-      - "postgresql"

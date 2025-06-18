@@ -2,21 +2,22 @@ package main
 
 import (
 	"github.com/diiineeei/ApiLojinha/controllers"
+	"github.com/diiineeei/ApiLojinha/database"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"os"
 )
 
-//	func init() {
-//		database.Database("postgres://admin:admin@localhost:5432/admin")
-//		//database.Migrate()
-//	}
+func init() {
+	mongoConfig := os.Getenv("MONGO_CONFIG")
+	database.ConnectMongo(mongoConfig)
+}
+
 func main() {
 	router := gin.Default()
 	router.Use(cors.Default())
-	//router.Use(static.Serve("/", static.LocalFile("static_production", false)))
-	router.POST("/api/cadastrar/produto", controllers.CadastraProduto)
-	router.POST("/api/upload", controllers.UploadProduto)
-	router.GET("/api/lista/produtos", controllers.ListaProdutos)
+	router.POST("/api/registro", controllers.Registro)
+	router.GET("/api/registros", controllers.ListaProdutos)
 	router.GET("/api/ping", func(c *gin.Context) {
 		c.String(200, "test")
 	})
