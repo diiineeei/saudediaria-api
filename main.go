@@ -18,6 +18,8 @@ func main() {
 	router.Use(cors.Default())
 	router.POST("/api/registro", controllers.Registro)
 	router.GET("/api/registros", controllers.ListaProdutos)
+	router.POST("/api/glicemia/:person", controllers.CreateGlicemiaEntry)
+	router.GET("/api/glicemia/:person/list", controllers.ListGlicemiaEntries)
 	router.GET("/api/ping", func(c *gin.Context) {
 		c.String(200, "test")
 	})
