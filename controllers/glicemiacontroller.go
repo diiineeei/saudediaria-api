@@ -29,12 +29,24 @@ func CreateGlicemiaEntry(ctx *gin.Context) {
 		return
 	}
 
-	now := time.Now()
+	period := strings.TrimSpace(input.Period)
+	if !models.IsValidPeriod(period) {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "period inválido"})
+		return
+	}
+
+	// Usa o fuso de São Paulo para que a data não vire o dia seguinte à noite (servidor em UTC).
+	loc, err := time.LoadLocation("America/Sao_Paulo")
+	if err != nil {
+		loc = time.FixedZone("BRT", -3*3600)
+	}
+	now := time.Now().In(loc)
 	entry := models.GlicemiaRecord{
 		Person:    person,
 		Glucose:   input.Glucose,
 		Date:      now.Format("2006-01-02"),
 		Time:      parsedTime.Format("15:04"),
+		Period:    period,
 		CreatedAt: now.UTC(),
 	}
 
