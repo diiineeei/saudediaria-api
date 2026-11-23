@@ -1,0 +1,72 @@
+name: Testar e publicar no Cloud Run
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch: # permite publicar manualmente pela aba Actions
+
+concurrency:
+  group: cloud-run-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  SERVICE: saudediaria
+  REGION: southamerica-east1
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - run: go build ./...
+      - run: go test ./...
+
+  deploy:
+    needs: test
+    # Publica só o que entra no main (PRs apenas testam).
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Conferir segredo do Google Cloud
+        env:
+          GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
+        run: |
+          if [ -z "$GCP_SA_KEY" ]; then
+            echo "::error::Falta o segredo GCP_SA_KEY (chave JSON da conta de serviço). Veja a seção Deploy do README."
+            exit 1
+          fi
+
+      - uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      # Faz o build com o Dockerfile (Cloud Build) e troca a versão no ar.
+      # As variáveis de ambiente já configuradas no serviço (ex.: MONGO_CONFIG) são mantidas.
+      - id: deploy
+        uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          service: ${{ env.SERVICE }}
+          region: ${{ env.REGION }}
+          source: ./
+
+      - name: Testar a versão publicada
+        env:
+          URL: ${{ steps.deploy.outputs.url }}
+        run: |
+          echo "Publicado em $URL"
+          test "$(curl -fsS "$URL/api/ping")" = "test"
+          # Rota de edição existe e valida o id (não altera nada no banco).
+          curl -sS -X PUT "$URL/api/glicemia/mary/abc" -H "Content-Type: application/json" \
+            -d '{"glucose":100,"time":"08:00"}' | grep -q "id inválido"
+          echo "API no ar com as rotas novas ✓"
