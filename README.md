@@ -11,6 +11,18 @@ API em Go (Gin + MongoDB) usada pelo app **Glicemia da Mary**.
 | `PUT` | `/api/glicemia/:person/:id` | Edita `{ glucose, time, date?, period }` (`period` vazio remove o momento) |
 | `DELETE` | `/api/glicemia/:person/:id` | Exclui a medição |
 
+## Rotas de insulina
+
+| Método | Rota | O que faz |
+|---|---|---|
+| `GET` | `/api/prescricao/:person` | Receita de insulina (404 se não houver) |
+| `PUT` | `/api/prescricao/:person` | Grava a receita: insulina basal (doses fixas por momento), insulina rápida (faixas de glicemia → unidades por refeição) e metas |
+| `POST` | `/api/insulina/:person` | Registra uma aplicação `{ kind: basal\|rapida, units, moment, time, date?, glucose?, suggested? }` |
+| `GET` | `/api/insulina/:person/list` | Lista as aplicações |
+| `PUT` / `DELETE` | `/api/insulina/:person/:id` | Edita ou exclui uma aplicação |
+
+Momentos de insulina: `antes_cafe`, `antes_almoco`, `antes_jantar`, `22h`.
+
 Momentos aceitos em `period`: `antes_cafe`, `pos_cafe`, `antes_almoco`, `pos_almoco`, `antes_jantar`, `pos_jantar`.
 
 ## Deploy automático (GitHub Actions → Cloud Run)

@@ -13,16 +13,20 @@ import (
 )
 
 const (
-	CollectionRegistros = "registros"
-	CollectionGlicemia  = "glicemia"
-	DatabaseName        = "saude"
+	CollectionRegistros  = "registros"
+	CollectionGlicemia   = "glicemia"
+	CollectionPrescricao = "prescricao"
+	CollectionInsulina   = "insulina"
+	DatabaseName         = "saude"
 )
 
 var (
-	client     *mongo.Client
-	collection *mongo.Collection
-	glicemiaCollection *mongo.Collection
-	once       sync.Once
+	client               *mongo.Client
+	collection           *mongo.Collection
+	glicemiaCollection   *mongo.Collection
+	prescricaoCollection *mongo.Collection
+	insulinaCollection   *mongo.Collection
+	once                 sync.Once
 )
 
 func ConnectMongo(uri string) {
@@ -45,6 +49,8 @@ func ConnectMongo(uri string) {
 
 		collection = client.Database(DatabaseName).Collection(CollectionRegistros)
 		glicemiaCollection = client.Database(DatabaseName).Collection(CollectionGlicemia)
+		prescricaoCollection = client.Database(DatabaseName).Collection(CollectionPrescricao)
+		insulinaCollection = client.Database(DatabaseName).Collection(CollectionInsulina)
 	})
 }
 
