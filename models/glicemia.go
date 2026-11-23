@@ -36,6 +36,15 @@ type GlicemiaInput struct {
 	Period  string  `json:"period"`
 }
 
+// GlicemiaUpdateInput é o corpo do PUT /api/glicemia/:person/:id.
+// Date é opcional (mantém a data atual se vier vazia); Period vazio limpa o momento.
+type GlicemiaUpdateInput struct {
+	Glucose float64 `json:"glucose" binding:"required"`
+	Time    string  `json:"time" binding:"required"`
+	Date    string  `json:"date"`
+	Period  string  `json:"period"`
+}
+
 type GlicemiaRecord struct {
 	ID        primitive.ObjectID `bson:"_id,omitempty" json:"_id"`
 	Person    string             `bson:"person" json:"person"`
