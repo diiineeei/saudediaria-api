@@ -51,22 +51,64 @@ jobs:
         with:
           credentials_json: ${{ secrets.GCP_SA_KEY }}
 
-      # Faz o build com o Dockerfile (Cloud Build) e troca a versão no ar.
-      # As variáveis de ambiente já configuradas no serviço (ex.: MONGO_CONFIG) são mantidas.
+      - uses: google-github-actions/setup-gcloud@v2
+
+      # Guarda os nomes das variáveis de ambiente e a versão que está no ar,
+      # para conferir depois e poder voltar atrás.
+      - name: Registrar estado atual do serviço
+        id: before
+        run: |
+          gcloud run services describe "$SERVICE" --region "$REGION" \
+            --format='value(spec.template.spec.containers[0].env[].name)' \
+            | tr ';' '\n' | sed '/^$/d' | sort > env-antes.txt
+          echo "Variáveis atuais (só os nomes):"; cat env-antes.txt
+          if [ ! -s env-antes.txt ]; then
+            echo "::error::Não encontrei variáveis de ambiente no serviço; parando para não publicar sem configuração."
+            exit 1
+          fi
+          echo "revision=$(gcloud run services describe "$SERVICE" --region "$REGION" --format='value(status.latestReadyRevisionName)')" >> "$GITHUB_OUTPUT"
+
+      # Faz o build com o Dockerfile (Cloud Build) e cria uma nova versão.
+      # Sem env_vars/secrets e com estratégia "merge": as variáveis já configuradas
+      # no serviço (ex.: MONGO_CONFIG) são mantidas, nunca substituídas.
       - id: deploy
         uses: google-github-actions/deploy-cloudrun@v2
         with:
           service: ${{ env.SERVICE }}
           region: ${{ env.REGION }}
           source: ./
+          env_vars_update_strategy: merge
+          secrets_update_strategy: merge
 
-      - name: Testar a versão publicada
+      - name: Mandar o tráfego para a versão nova
+        run: gcloud run services update-traffic "$SERVICE" --region "$REGION" --to-latest
+
+      - name: Conferir variáveis de ambiente e testar a versão publicada
         env:
           URL: ${{ steps.deploy.outputs.url }}
         run: |
+          gcloud run services describe "$SERVICE" --region "$REGION" \
+            --format='value(spec.template.spec.containers[0].env[].name)' \
+            | tr ';' '\n' | sed '/^$/d' | sort > env-depois.txt
+          faltando=$(comm -23 env-antes.txt env-depois.txt)
+          if [ -n "$faltando" ]; then
+            echo "::error::Variáveis que sumiram no deploy: $faltando"
+            exit 1
+          fi
+          echo "Variáveis de ambiente preservadas ✓"
+
           echo "Publicado em $URL"
-          test "$(curl -fsS "$URL/api/ping")" = "test"
+          test "$(curl -fsS --retry 3 --retry-delay 5 "$URL/api/ping")" = "test"
           # Rota de edição existe e valida o id (não altera nada no banco).
           curl -sS -X PUT "$URL/api/glicemia/mary/abc" -H "Content-Type: application/json" \
             -d '{"glucose":100,"time":"08:00"}' | grep -q "id inválido"
           echo "API no ar com as rotas novas ✓"
+
+      # Se algo acima falhar depois do deploy, volta todo o tráfego para a versão anterior.
+      - name: Voltar para a versão anterior
+        if: failure() && steps.before.outputs.revision != ''
+        env:
+          PREV: ${{ steps.before.outputs.revision }}
+        run: |
+          echo "::warning::Voltando o tráfego para $PREV"
+          gcloud run services update-traffic "$SERVICE" --region "$REGION" --to-revisions="$PREV=100"

@@ -31,7 +31,11 @@ O workflow `.github/workflows/deploy-cloud-run.yml` roda os testes em todo PR e,
 4. No GitHub, em **Settings → Secrets and variables → Actions → New repository secret**, crie `GCP_SA_KEY` e cole **todo** o conteúdo do JSON. Depois apague o arquivo do computador.
 5. Se o primeiro deploy pedir, ative as APIs **Cloud Build** e **Artifact Registry** no projeto (o erro traz o link).
 
-As variáveis de ambiente do serviço (como `MONGO_CONFIG`) continuam configuradas no Cloud Run; o deploy não mexe nelas.
+### Proteções do deploy
+
+- As variáveis de ambiente do serviço (como `MONGO_CONFIG`) ficam só no Cloud Run: o workflow não envia nenhuma e usa a estratégia `merge`, que mantém as existentes.
+- Antes de publicar, o workflow guarda os **nomes** das variáveis (nunca os valores) e a versão no ar. Se o serviço não tiver nenhuma variável, ele para sem publicar.
+- Depois de publicar, confere se todas as variáveis continuam lá e testa a API. Se algo falhar, **volta o tráfego para a versão anterior** automaticamente e marca o deploy como falho.
 
 ## Desenvolvimento
 
