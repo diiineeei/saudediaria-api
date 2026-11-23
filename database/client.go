@@ -107,6 +107,44 @@ func ListGlicemiaEntries(person string) ([]models.GlicemiaRecord, error) {
 	return results, nil
 }
 
+// ErrGlicemiaNotFound indica que a medição não existe para essa pessoa.
+var ErrGlicemiaNotFound = mongo.ErrNoDocuments
+
+// UpdateGlicemiaEntry altera uma medição e devolve o documento já atualizado.
+func UpdateGlicemiaEntry(person string, id primitive.ObjectID, set bson.M, unset bson.M) (models.GlicemiaRecord, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	update := bson.M{"$set": set}
+	if len(unset) > 0 {
+		update["$unset"] = unset
+	}
+
+	var updated models.GlicemiaRecord
+	err := glicemiaCollection.FindOneAndUpdate(
+		ctx,
+		bson.M{"_id": id, "person": person},
+		update,
+		options.FindOneAndUpdate().SetReturnDocument(options.After),
+	).Decode(&updated)
+	return updated, err
+}
+
+// DeleteGlicemiaEntry remove uma medição. Devolve ErrGlicemiaNotFound se não existir.
+func DeleteGlicemiaEntry(person string, id primitive.ObjectID) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	res, err := glicemiaCollection.DeleteOne(ctx, bson.M{"_id": id, "person": person})
+	if err != nil {
+		return err
+	}
+	if res.DeletedCount == 0 {
+		return ErrGlicemiaNotFound
+	}
+	return nil
+}
+
 // GetRegistros busca registros conforme filtro (exemplo básico por data)
 func GetRegistros(filtro models.Registro) ([]models.Registro, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)

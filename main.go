@@ -20,6 +20,8 @@ func main() {
 	router.GET("/api/registros", controllers.ListaProdutos)
 	router.POST("/api/glicemia/:person", controllers.CreateGlicemiaEntry)
 	router.GET("/api/glicemia/:person/list", controllers.ListGlicemiaEntries)
+	router.PUT("/api/glicemia/:person/:id", controllers.UpdateGlicemiaEntry)
+	router.DELETE("/api/glicemia/:person/:id", controllers.DeleteGlicemiaEntry)
 	router.POST("/api/alexa", controllers.AlexaWebhook)
 	router.POST("/api/alexa/webhook", controllers.AlexaWebhook)
 	router.GET("/api/ping", func(c *gin.Context) {
